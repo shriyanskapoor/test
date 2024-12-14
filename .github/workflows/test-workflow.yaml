@@ -1,0 +1,19 @@
+name: Test Composite Action
+
+on:
+  pull_request:
+    paths:
+      - '**/*'  # Trigger on changes to any file
+
+jobs:
+  test-added-files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Run Composite Action
+        uses: ./actions/action.yaml
+        with:
+          regex: '.*\\.snap|.*/__snapshot__/.*'

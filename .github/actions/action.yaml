@@ -1,0 +1,88 @@
+name: Check Added Files
+
+description: >
+  Warn if any files in the provided regex pattern are strictly added (not moved or renamed) in a PR.
+
+inputs:
+  regex:
+    description: 'Regex pattern to check for added files.'
+    required: true
+    default: '.*\.snap|.*/__snapshot__/.*'
+
+outputs:
+  result:
+    description: 'pass or fail based on the check.'
+    value: ''
+
+runs:
+  using: "composite"
+  steps:
+    # Step 1: Fetch all PR changes
+    - name: Fetch PR Changes
+      run: |
+        echo "Fetching the list of changes in the pull request..."
+        git fetch origin "refs/pull/${{ github.event.pull_request.number }}/merge:pr" && git checkout pr
+        # Generate a diff of changes between the PR and the base branch
+        git diff --name-status origin/${{ github.event.pull_request.base.ref }} > diff_output.txt
+      shell: bash
+
+    # Step 2: Run Python Script to Process Files
+    - name: Check Added Files with Python
+      id: check_added_files
+      run: |
+        import os
+        import re
+
+        # Step 2.1: Read the regex pattern from input and the diff output file
+        regex_pattern = r"${{ inputs.regex }}"
+        with open('diff_output.txt', 'r') as f:
+            diff_lines = f.readlines()
+
+        # Step 2.2: Compile the regex pattern for matching file paths
+        regex = re.compile(regex_pattern)
+
+        # Step 2.3: Initialize lists to track added and renamed files
+        added_files = []  # Files flagged as newly added to the repository
+        renamed_files = []  # Files that have been renamed or moved
+
+        # Step 2.4: Parse the diff output line by line
+        for line in diff_lines:
+            parts = line.strip().split('\t')
+            status, file_path = parts[0], parts[-1]  # Status is the first column, path is the last
+
+            if status == 'A':  # Added files
+                added_files.append(file_path)
+            elif status.startswith('R'):  # Renamed (or moved) files
+                renamed_files.append(file_path)
+
+        # Step 2.5: Exclude renamed/moved files from the list of added files
+        strictly_added_files = [f for f in added_files if f not in renamed_files]
+
+        # Step 2.6: Match strictly added files against the regex pattern
+        matching_files = [f for f in strictly_added_files if regex.match(f)]
+
+        # Step 2.7: Output results and exit with appropriate status
+        if matching_files:
+            print("Files matching the pattern were strictly added:")
+            for f in matching_files:
+                print(f)
+            print(f"::set-output name=warn_files::{','.join(matching_files)}")
+            exit(0)  # Exit with failure if there are matching files
+        else:
+            print("No strictly added files matching the pattern found.")
+            print("::set-output name=warn_files::")
+      shell: python3
+
+    # Step 3: Set Result Based on Python Output
+    - name: Set Result
+      run: |
+        # Check the output of the Python script to determine result
+        if [ -n "${{ steps.check_added_files.outputs.warn_files }}" ]; then
+          echo "Strictly added files matching the regex pattern found. Failing the check."
+          echo "::set-output name=result::fail"
+          exit 1
+        else
+          echo "No issues found. Passing the check."
+          echo "::set-output name=result::pass"
+        fi
+      shell: bash
