@@ -1,13 +1,13 @@
-name: Dont Allow New Snapshots On CI
+name: Discourage New Snapshots On CI
 
 description: >
-  Warn if any files in the provided regex pattern are strictly added (not moved or renamed) in a PR.
+  Warn if any files in the provided regex (defaults to test snapshot files) pattern are strictly added (not moved or renamed) in a PR.
 
 inputs:
   regex:
     description: 'Regex pattern to check for added files.'
     required: false
-    default: '.*__snapshots__.*|.*\.snap'
+    default: '.*__snapshots__.*|.*\.snap$'
 
 outputs:
   result:
@@ -28,19 +28,23 @@ runs:
         git fetch origin ${{ github.event.pull_request.base.ref }}
       shell: bash
 
-    - name: "Generate the diff of changed files and Filter by Flags and Regex"
-      run: | # -M:Detect renames -C:Detect copies --find-copies-harder:Find copies within the same commit
-        git diff --diff-filter=A -M -C --find-copies-harder --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD | grep -E "${{ inputs.regex }}" > diff_output.txt
+    - name: "Generate the diff of changed files"
+      run: |
+        git diff --diff-filter=A -M -C --find-copies-harder --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD > diff_output.txt
         cat diff_output.txt
         echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Set Result
+    - name: Check Added Snapshot Files with Grep
+      id: check_added_files
       run: |
-        # Check if diff_output.txt contains any lines
-        if [ -s diff_output.txt ]; then
-          echo "::warning file=diff_output.txt::Matching files found. See the list in diff_output.txt"
+        # Use grep to find files that match the regex pattern in the added files
+        if grep -Eq "${{ inputs.regex }}" diff_output.txt; then
+          echo "Found files matching the pattern."
+          echo "::warning::Found files matching the pattern"
+          echo "result=fail" >> $GITHUB_ENV
         else
-          echo "No matching files found. Passing step."
+          echo "No files matching the pattern found."
+          echo "result=pass" >> $GITHUB_ENV
         fi
       shell: bash
