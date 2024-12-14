@@ -49,6 +49,7 @@ runs:
             diff_lines = f.readlines()
 
         # Step 2.2: Compile the regex pattern for matching file paths
+        print(regex_pattern)
         regex = re.compile(regex_pattern)
 
         # Step 2.3: Initialize lists to track added and renamed files
