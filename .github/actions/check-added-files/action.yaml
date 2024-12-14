@@ -30,7 +30,7 @@ runs:
 
     - name: "Generate the diff of changed files"
       run: |
-        merge_base=$(git merge-base origin/main pr-merge)
+        merge_base=$(git merge-base origin/${{ github.event.pull_request.base.ref }} pr-merge)
         git diff --diff-filter=A -M -C --find-copies-harder --name-status $merge_base...pr-merge > diff_output.txt
         cat diff_output.txt
         echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
