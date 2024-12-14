@@ -1,0 +1,3 @@
+M	.github/actions/check-added-files/action.yaml
+C100	__snapshots__/allow_this.snap	allow_this_renamed_again.snap
+C100	__snapshots__/allow_this.snap	tests/allow_this.snap
