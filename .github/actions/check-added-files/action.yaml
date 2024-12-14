@@ -91,7 +91,7 @@ runs:
           warn_files=$(echo "${{ steps.check_added_files.outputs.warn_files }}" | tr ',' '\n' | sed '/^$/d')
           echo "Warn Files (Raw): |${{ steps.check_added_files.outputs.warn_files }}|"
           echo "::warning file=diff_output.txt::Strictly added files matching the regex pattern found:
-          $warn_files"
+        $warn_files"
           echo "result=fail" >> $GITHUB_ENV
         else
           echo "result=pass" >> $GITHUB_ENV
