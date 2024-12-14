@@ -7,7 +7,7 @@ inputs:
   regex:
     description: 'Regex pattern to check for added files.'
     required: true
-    default: '.*\.snap|.*/__snapshot__/.*'
+    default: '.*__snapshots__.*|.*\.snap'
 
 outputs:
   result:
@@ -57,10 +57,9 @@ runs:
 
         # Step 2.4: Parse the diff output line by line
         for line in diff_lines:
-            print(line)
             parts = line.strip().split('\t')
             status, file_path = parts[0], parts[-1]  # Status is the first column, path is the last
-
+            print(file_path)
             if status == 'A':  # Added files
                 added_files.append(file_path)
             elif status.startswith('R'):  # Renamed (or moved) files
