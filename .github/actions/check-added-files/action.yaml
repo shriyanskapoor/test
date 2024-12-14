@@ -1,4 +1,4 @@
-name: Check Added Files
+name: Dont Allow New Snapshots On CI
 
 description: >
   Warn if any files in the provided regex pattern are strictly added (not moved or renamed) in a PR.
@@ -6,7 +6,7 @@ description: >
 inputs:
   regex:
     description: 'Regex pattern to check for added files.'
-    required: true
+    required: false
     default: '.*__snapshots__.*|.*\.snap'
 
 outputs:
@@ -17,7 +17,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    # Step 1: Fetch all PR changes
     - name: "Fetch the pull request merge branch"
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
@@ -36,27 +35,26 @@ runs:
         echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
       shell: bash
 
-    # Step 2: Run Python Script to Process Files
     - name: Check Added Files with Python
       id: check_added_files
       run: |
         import os
         import re
 
-        # Step 2.1: Read the regex pattern from input and the diff output file
+        # Read the regex pattern from input and the diff output file
         regex_pattern = r"${{ inputs.regex }}"
         with open('diff_output.txt', 'r') as f:
             diff_lines = f.readlines()
 
-        # Step 2.2: Compile the regex pattern for matching file paths
+        # Compile the regex pattern for matching file paths
         print(regex_pattern)
         regex = re.compile(regex_pattern)
 
-        # Step 2.3: Initialize lists to track added and renamed files
+        # Initialize lists to track added and renamed files
         added_files = []  # Files flagged as newly added to the repository
         renamed_files = []  # Files that have been renamed or moved
 
-        # Step 2.4: Parse the diff output line by line
+        # Parse the diff output line by line
         for line in diff_lines:
             parts = line.strip().split('\t')
             status, file_path = parts[0], parts[-1]  # Status is the first column, path is the last
@@ -66,27 +64,25 @@ runs:
             elif status.startswith('R'):  # Renamed (or moved) files
                 renamed_files.append(file_path)
 
-        # Step 2.5: Exclude renamed/moved files from the list of added files
+        # Exclude renamed/moved files from the list of added files
         strictly_added_files = [f for f in added_files if f not in renamed_files]
 
-        # Step 2.6: Match strictly added files against the regex pattern
+        # Match strictly added files against the regex pattern
         matching_files = [f for f in strictly_added_files if regex.match(f)]
 
-        # Step 2.7: Output results and exit with appropriate status
+        # Output results and exit with appropriate status
         if matching_files:
             print("Files matching the pattern were strictly added:")
             for f in matching_files:
                 print(f)
             with open(os.getenv('GITHUB_OUTPUT'), 'a') as fh:
                 fh.write(f"warn_files={','.join(matching_files)}\n")
-            exit(0)  # Exit with failure if there are matching files
         else:
             print("No strictly added files matching the pattern found.")
             with open(os.getenv('GITHUB_OUTPUT'), 'a') as fh:
                 fh.write("warn_files=\n")
       shell: python
 
-    # Step 3: Set Result Based on Python Output
     - name: Set Result
       run: |
         # Check the output of the Python script to determine result
