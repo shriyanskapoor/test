@@ -54,7 +54,19 @@ runs:
         added_files = []  # Files flagged as newly added to the repository
         renamed_files = []  # Files that have been renamed or moved
 
+
         # Parse the diff output line by line
+        """
+        Possible status letters are:
+        A: addition of a file
+        C: copy of a file into a new one
+        D: deletion of a file
+        M: modification of the contents or mode of a file
+        R: renaming of a file
+        T: change in the type of the file (regular file, symbolic link or submodule)
+        U: file is unmerged (you must complete the merge before it can be committed)
+        X: "unknown" change type (most probably a bug, please report it)
+        """
         for line in diff_lines:
             parts = line.strip().split('\t')
             status, file_path = parts[0], parts[-1]  # Status is the first column, path is the last
