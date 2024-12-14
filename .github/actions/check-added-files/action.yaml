@@ -7,7 +7,7 @@ inputs:
   regex:
     description: 'Regex pattern to check for added files.'
     required: false
-    default: '.*__snapshots__.*|.*\.snap'
+    default: '.*__snapshots__.*|.*\.snap$'
 
 outputs:
   result:
