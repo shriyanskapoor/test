@@ -18,12 +18,21 @@ runs:
   using: "composite"
   steps:
     # Step 1: Fetch all PR changes
-    - name: Fetch PR Changes
+    - name: "Fetch the pull request merge branch"
       run: |
-        echo "Fetching the list of changes in the pull request..."
-        git fetch origin "refs/pull/${{ github.event.pull_request.number }}/merge:pr" && git checkout pr
-        # Generate a diff of changes between the PR and the base branch
+        git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
+        git checkout pr-merge
+      shell: bash
+
+    - name: "Fetch the base branch"
+      run: |
+        git fetch origin ${{ github.event.pull_request.base.ref }}
+      shell: bash
+
+    - name: "Generate the diff of changed files"
+      run: |
         git diff --name-status origin/${{ github.event.pull_request.base.ref }} > diff_output.txt
+        echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
       shell: bash
 
     # Step 2: Run Python Script to Process Files
@@ -79,10 +88,10 @@ runs:
         # Check the output of the Python script to determine result
         if [ -n "${{ steps.check_added_files.outputs.warn_files }}" ]; then
           echo "Strictly added files matching the regex pattern found. Failing the check."
-          echo "::set-output name=result::fail"
+          echo "result=fail" >> $GITHUB_ENV
           exit 1
-        else
+        else:
           echo "No issues found. Passing the check."
-          echo "::set-output name=result::pass"
+          echo "result=pass" >> $GITHUB_ENV
         fi
       shell: bash
