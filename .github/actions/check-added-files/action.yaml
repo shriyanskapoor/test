@@ -80,7 +80,7 @@ runs:
         else:
             print("No strictly added files matching the pattern found.")
             print("::set-output name=warn_files::")
-      shell: bash
+      shell: python
 
     # Step 3: Set Result Based on Python Output
     - name: Set Result
