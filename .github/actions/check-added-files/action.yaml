@@ -57,6 +57,7 @@ runs:
 
         # Step 2.4: Parse the diff output line by line
         for line in diff_lines:
+            print(line)
             parts = line.strip().split('\t')
             status, file_path = parts[0], parts[-1]  # Status is the first column, path is the last
 
