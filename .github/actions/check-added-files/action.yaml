@@ -28,84 +28,19 @@ runs:
         git fetch origin ${{ github.event.pull_request.base.ref }}
       shell: bash
 
-    - name: "Generate the diff of changed files"
-      run: |
-        git diff -M -C --find-copies-harder --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD > diff_output.txt
+    - name: "Generate the diff of changed files and Filter by Flags and Regex"
+      run: | # -M:Detect renames -C:Detect copies --find-copies-harder:Find copies within the same commit
+        git diff --diff-filter=A -M -C --find-copies-harder --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD | grep -E "${{ inputs.regex }}" > diff_output.txt
         cat diff_output.txt
         echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Check Added Files with Python
-      id: check_added_files
-      run: |
-        import os
-        import re
-
-        # Read the regex pattern from input and the diff output file
-        regex_pattern = r"${{ inputs.regex }}"
-        with open('diff_output.txt', 'r') as f:
-            diff_lines = f.readlines()
-
-        # Compile the regex pattern for matching file paths
-        print(regex_pattern)
-        regex = re.compile(regex_pattern)
-
-        # Initialize lists to track added and renamed files
-        added_files = []  # Files flagged as newly added to the repository
-        renamed_files = []  # Files that have been renamed or moved
-
-
-        # Parse the diff output line by line
-        """
-        Possible status letters are:
-        A: addition of a file
-        C: copy of a file into a new one
-        D: deletion of a file
-        M: modification of the contents or mode of a file
-        R: renaming of a file
-        T: change in the type of the file (regular file, symbolic link or submodule)
-        U: file is unmerged (you must complete the merge before it can be committed)
-        X: "unknown" change type (most probably a bug, please report it)
-        """
-        for line in diff_lines:
-            parts = line.strip().split('\t')
-            status, file_path = parts[0], parts[-1]  # Status is the first column, path is the last
-            print(file_path)
-            if status == 'A':  # Added files
-                added_files.append(file_path)
-            elif status.startswith('R'):  # Renamed (or moved) files
-                renamed_files.append(file_path)
-
-        # Exclude renamed/moved files from the list of added files
-        strictly_added_files = [f for f in added_files if f not in renamed_files]
-
-        # Match strictly added files against the regex pattern
-        matching_files = [f for f in strictly_added_files if regex.match(f)]
-
-        # Output results and exit with appropriate status
-        if matching_files:
-            print("Files matching the pattern were strictly added:")
-            for f in matching_files:
-                print(f)
-            with open(os.getenv('GITHUB_OUTPUT'), 'a') as fh:
-                fh.write(f"warn_files={','.join(matching_files)}\n")
-        else:
-            print("No strictly added files matching the pattern found.")
-            with open(os.getenv('GITHUB_OUTPUT'), 'a') as fh:
-                fh.write("warn_files=\n")
-      shell: python
-
     - name: Set Result
       run: |
-        # Check the output of the Python script to determine result
-        if [ -n "${{ steps.check_added_files.outputs.warn_files }}" ]; 
-        then
-          warn_files=$(echo "${{ steps.check_added_files.outputs.warn_files }}" | tr ',' '\n' | sed '/^$/d')
-          echo "Warn Files (Raw): |${{ steps.check_added_files.outputs.warn_files }}|"
-          echo "::warning file=diff_output.txt::Strictly added files matching the regex pattern found:
-        $warn_files"
-          echo "result=fail" >> $GITHUB_ENV
+        # Check if diff_output.txt contains any lines
+        if [ -s diff_output.txt ]; then
+          echo "::warning file=diff_output.txt::Matching files found. See the list in diff_output.txt"
         else
-          echo "result=pass" >> $GITHUB_ENV
+          echo "No matching files found. Passing step."
         fi
       shell: bash
