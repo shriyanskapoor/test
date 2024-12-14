@@ -1,19 +1,15 @@
-name: Test Composite Action
+name: Test Workflow
 
-on:
-  pull_request:
-    paths:
-      - '**/*'  # Trigger on changes to any file
+on: [pull_request]
 
 jobs:
-  test-added-files:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Run Composite Action
-        uses: ./.github/actions/check-added-files/action.yaml
+      - name: Run custom action
+        uses: ./.github/actions/check-added-files
         with:
-          regex: '.*\\.snap|.*/__snapshot__/.*'
+          regex: '.*__snapshots__.*|.*\.snap'
