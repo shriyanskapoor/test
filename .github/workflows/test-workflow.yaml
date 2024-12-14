@@ -14,4 +14,4 @@ jobs:
       - name: Run custom action
         uses: ./.github/actions/check-added-files
         with:
-          regex: '.*__snapshots__.*|.*\.snap'
+          regex: '.*__snapshots__.*|.*\.snap$'

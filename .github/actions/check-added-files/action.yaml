@@ -25,12 +25,13 @@ runs:
 
     - name: "Fetch the base branch"
       run: |
-        git fetch origin ${{ github.event.pull_request.base.ref }}
+        git fetch --unshallow origin ${{ github.event.pull_request.base.ref }}
       shell: bash
 
     - name: "Generate the diff of changed files"
       run: |
-        git diff --diff-filter=A -M -C --find-copies-harder --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD > diff_output.txt
+        merge_base=$(git merge-base origin/${{ github.event.pull_request.base.ref }} pr-merge)
+        git diff --diff-filter=A -M -C --find-copies-harder --name-status $merge_base...pr-merge > diff_output.txt
         cat diff_output.txt
         echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
       shell: bash
