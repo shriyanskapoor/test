@@ -30,7 +30,7 @@ runs:
 
     - name: "Generate the diff of changed files"
       run: |
-        git diff --name-status origin/${{ github.event.pull_request.base.ref }} > diff_output.txt
+        git diff --diff-filter=ACDMRTUXB --name-status origin/${{ github.event.pull_request.base.ref }} > diff_output.txt
         cat diff_output.txt
         echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
       shell: bash
