@@ -28,20 +28,26 @@ runs:
         git fetch origin ${{ github.event.pull_request.base.ref }}
       shell: bash
 
-    - name: "Generate the diff of changed files"
+    - name: "Find the common ancestor commit"
       run: |
-        git diff --diff-filter=A -M -C --find-copies-harder --name-status origin/${{ github.event.pull_request.base.ref }}...HEAD > diff_output.txt
-        cat diff_output.txt
-        echo "diff_file=diff_output.txt" >> $GITHUB_OUTPUT
+        common_ancestor=$(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }})
+        echo "common_ancestor=$common_ancestor" >> $GITHUB_ENV
+      shell: bash
+
+    - name: "List strictly added files"
+      run: |
+        added_files=$(git log --diff-filter=A --name-only --pretty="" ${{ env.common_ancestor }}..HEAD)
+        echo "$added_files" > added_files.txt
+        cat added_files.txt
+        echo "added_files=added_files.txt" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Check Added Snapshot Files with Grep
       id: check_added_files
       run: |
         # Use grep to find files that match the regex pattern in the added files
-        if grep -Eq "${{ inputs.regex }}" diff_output.txt; then
+        if grep -Eq "${{ inputs.regex }}" added_files.txt; then
           echo "Found files matching the pattern."
-          echo "::warning::Found files matching the pattern"
           echo "result=fail" >> $GITHUB_ENV
         else
           echo "No files matching the pattern found."
