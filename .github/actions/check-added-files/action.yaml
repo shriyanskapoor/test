@@ -38,7 +38,7 @@ runs:
 
     - name: "List strictly added files"
       run: |
-        added_files=$(git log --diff-filter=A --name-only --pretty="" ${{ steps.find_common_ancestor.outputs.common_ancestor }}..HEAD)
+        added_files=$(git log --diff-filter=A -M100% --name-only --pretty="" ${{ steps.find_common_ancestor.outputs.common_ancestor }}..HEAD)
         echo "$added_files" > added_files.txt
         cat added_files.txt
         echo "added_files=added_files.txt" >> $GITHUB_OUTPUT
