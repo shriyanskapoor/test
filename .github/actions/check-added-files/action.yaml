@@ -29,6 +29,7 @@ runs:
       shell: bash
 
     - name: "Find the common ancestor commit"
+      id: find_common_ancestor
       run: |
         common_ancestor=$(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }})
         echo $common_ancestor
