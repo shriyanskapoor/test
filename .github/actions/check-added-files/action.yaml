@@ -12,7 +12,7 @@ inputs:
 outputs:
   result:
     description: 'pass or fail based on the check.'
-    value: ''
+    value: ${{ steps.check_added_files.outputs.result }}
 
 runs:
   using: "composite"
@@ -50,9 +50,9 @@ runs:
         # Use grep to find files that match the regex pattern in the added files
         if grep -Eq "${{ inputs.regex }}" added_files.txt; then
           echo "Found files matching the pattern."
-          echo "result=fail" >> $GITHUB_ENV
+          echo "result=fail" >> $GITHUB_OUTPUT
         else
           echo "No files matching the pattern found."
-          echo "result=pass" >> $GITHUB_ENV
+          echo "result=pass" >> $GITHUB_OUTPUT
         fi
       shell: bash
