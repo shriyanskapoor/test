@@ -10,20 +10,20 @@ inputs:
     default: '.*__snapshots__.*|.*\.snap$'
 
 outputs:
-  result:
+  has_snapshots:
     description: 'pass or fail based on the check.'
-    value: ${{ steps.check_added_files.outputs.result }}
+    value: ${{ steps.check_added_files.outputs.has_snapshots }}
 
 runs:
   using: "composite"
   steps:
-    - name: "Fetch the pull request merge branch"
+    - name: "Fetch the pull request merge branch and checkout"
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/merge:pr-merge
         git checkout pr-merge
       shell: bash
 
-    - name: "Fetch the base branch"
+    - name: "Fetch the base branch unshallow"
       run: |
         git fetch --prune --unshallow origin ${{ github.event.pull_request.base.ref }}
       shell: bash
@@ -44,15 +44,15 @@ runs:
         echo "added_files=added_files.txt" >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Check Added Snapshot Files with Grep
+    - name: Check Added Snapshot Files
       id: check_added_files
       run: |
         # Use grep to find files that match the regex pattern in the added files
         if grep -Eq "${{ inputs.regex }}" added_files.txt; then
           echo "Found files matching the pattern."
-          echo "result=fail" >> $GITHUB_OUTPUT
+          echo "has_snapshots=fail" >> $GITHUB_OUTPUT
         else
           echo "No files matching the pattern found."
-          echo "result=pass" >> $GITHUB_OUTPUT
+          echo "has_snapshots=pass" >> $GITHUB_OUTPUT
         fi
       shell: bash
