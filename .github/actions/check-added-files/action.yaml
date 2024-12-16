@@ -25,7 +25,7 @@ runs:
 
     - name: "Fetch the base branch"
       run: |
-        git fetch origin ${{ github.event.pull_request.base.ref }}
+        git fetch --prune --unshallow origin ${{ github.event.pull_request.base.ref }}
       shell: bash
 
     - name: "Find the common ancestor commit"
